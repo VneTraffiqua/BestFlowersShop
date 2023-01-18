@@ -1,15 +1,17 @@
 from django.db import models
+from django.utils import timezone
+from django.contrib.auth.models import User
 from phonenumber_field.modelfields import PhoneNumberField
-#Hello from Rinat
 
 
 class Customer(models.Model):
-    id = models.IntegerField()
     name = models.CharField('Имя', max_length=255)
     address = models.CharField('Адрес', max_length=255)
     delivery_date = models.DateField('Дата доставки', )
     delivery_time = models.TimeField('Время доставки', )
-    bouquet = models.ManyToManyField('Букет', related_name='costomers')
+    bouquet = models.ManyToManyField(
+        'Bouquet', blank=True, related_name='bouquets'
+    )
 
 
 class Bouquet(models.Model):
