@@ -4,8 +4,15 @@ from django.contrib.auth.models import User
 from phonenumber_field.modelfields import PhoneNumberField
 
 
-class Customer(models.Model):
-    name = models.CharField('Имя', max_length=255)
+class Bouquet(models.Model):
+    title = models.CharField('Название', max_length=255)
+    image = models.ImageField('Изображение')
+    price = models.IntegerField('Стоимость')
+    bouquet_meaning = models.CharField('Описание', max_length=255)
+    status = models.BooleanField()
+
+
+class Order(models.Model):
     address = models.CharField('Адрес', max_length=255)
     delivery_date = models.DateField('Дата доставки', )
     delivery_time = models.TimeField('Время доставки', )
@@ -14,11 +21,8 @@ class Customer(models.Model):
     )
 
 
-class Bouquet(models.Model):
-    title = models.CharField('Название', max_length=255)
-    image = models.ImageField('Изображение')
-    price = models.IntegerField('Стоимость')
-    bouquet_meaning = models.CharField('Смысл букета', max_length=255)
+class Customer(models.Model):
+    name = models.CharField('Имя', max_length=255)
     phone_number = PhoneNumberField(
         region='RU',
         blank=True,
@@ -26,6 +30,9 @@ class Bouquet(models.Model):
         verbose_name='Номер покупателя',
         db_index=True
     )
-    floral_composition = models.CharField('Цветочная композиция', max_length=255)
-    status = models.BooleanField()
-
+    orders = models.ForeignKey(
+        to=Order,
+        on_delete=models.CASCADE,
+        verbose_name='Заказы',
+        related_name='Orders'
+    )
