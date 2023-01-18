@@ -1,5 +1,6 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+#Hello from Rinat
 
 
 class Customer(models.Model):
