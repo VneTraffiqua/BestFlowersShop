@@ -30,8 +30,8 @@ class Bouquet(models.Model):
     )
     image = models.ImageField(
         verbose_name='Изображение',
-        upload_to='/media',
-        
+        upload_to='media',
+
     )
     price = models.IntegerField(
         'Стоимость'
