@@ -4,6 +4,21 @@ from django.contrib.auth.models import User
 from phonenumber_field.modelfields import PhoneNumberField
 
 
+class Flower(models.Model):
+    title = models.CharField(
+        max_length=255,
+        verbose_name='Цветы',
+        help_text='Введите название цветов'
+    )
+
+    def __str__(self):
+        return f'{self.title}'
+
+    class Meta:
+        verbose_name = 'Цветы'
+        verbose_name_plural = 'Цветы'
+
+
 class Category(models.Model):
     title = models.CharField(
         max_length=255,
@@ -27,6 +42,11 @@ class Bouquet(models.Model):
     )
     category = models.ForeignKey(
         to=Category, on_delete=models.CASCADE, verbose_name='Категория',
+    )
+    flowers = models.ManyToManyField(
+        'Flower',
+        verbose_name='Цветы в композиции',
+        related_name='flowers'
     )
     image = models.ImageField(
         verbose_name='Изображение',
