@@ -67,22 +67,6 @@ class Bouquet(models.Model):
         verbose_name_plural = 'Букеты'
 
 
-class Order(models.Model):
-    address = models.CharField('Адрес', max_length=255)
-    delivery_date = models.DateField('Дата доставки', )
-    delivery_time = models.TimeField('Время доставки', )
-    bouquet = models.ForeignKey(
-        to=Bouquet, on_delete=models.CASCADE, verbose_name='Букет>',
-    )
-
-    def __str__(self):
-        return f'{self.id}'
-
-    class Meta:
-        verbose_name = 'Заказ'
-        verbose_name_plural = 'Заказы'
-
-
 class Customer(models.Model):
     name = models.CharField('Имя', max_length=255)
     phone_number = PhoneNumberField(
@@ -92,12 +76,6 @@ class Customer(models.Model):
         verbose_name='Номер покупателя',
         db_index=True
     )
-    orders = models.ForeignKey(
-        to=Order,
-        on_delete=models.CASCADE,
-        verbose_name='Заказы',
-        related_name='Orders'
-    )
 
     def __str__(self):
         return f'{self.name}'
@@ -105,3 +83,25 @@ class Customer(models.Model):
     class Meta:
         verbose_name = 'Покупатель'
         verbose_name_plural = 'Покупатели'
+
+
+
+class Order(models.Model):
+    address = models.CharField('Адрес', max_length=255)
+    delivery_date = models.DateField('Дата доставки', )
+    delivery_time = models.TimeField('Время доставки', )
+    bouquet = models.ForeignKey(
+        to=Bouquet, on_delete=models.CASCADE, verbose_name='Букет>',
+    )
+    customer = models.ForeignKey(
+        to=Customer,
+        on_delete=models.CASCADE,
+        verbose_name='Покупатель',
+    )
+
+    def __str__(self):
+        return f'{self.id}'
+
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
