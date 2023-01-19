@@ -34,19 +34,33 @@ class Bouquet(models.Model):
 
     )
     price = models.IntegerField(
-        'Стоимость'
+        verbose_name= 'Стоимость'
     )
     bouquet_meaning = models.CharField('Описание', max_length=255)
     status = models.BooleanField()
+
+    def __str__(self):
+        return f'{self.title}'
+
+    class Meta:
+        verbose_name = 'Букет'
+        verbose_name_plural = 'Букеты'
 
 
 class Order(models.Model):
     address = models.CharField('Адрес', max_length=255)
     delivery_date = models.DateField('Дата доставки', )
     delivery_time = models.TimeField('Время доставки', )
-    bouquet = models.ManyToManyField(
-        'Bouquet', blank=True, related_name='bouquets'
+    bouquet = models.ForeignKey(
+        to=Bouquet, on_delete=models.CASCADE, verbose_name='Букет>',
     )
+
+    def __str__(self):
+        return f'{self.id}'
+
+    class Meta:
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
 
 
 class Customer(models.Model):
@@ -64,3 +78,10 @@ class Customer(models.Model):
         verbose_name='Заказы',
         related_name='Orders'
     )
+
+    def __str__(self):
+        return f'{self.name}'
+
+    class Meta:
+        verbose_name = 'Покупатель'
+        verbose_name_plural = 'Покупатели'
