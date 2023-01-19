@@ -54,7 +54,7 @@ class Bouquet(models.Model):
 
     )
     price = models.IntegerField(
-        verbose_name= 'Стоимость'
+        verbose_name='Стоимость'
     )
     bouquet_meaning = models.CharField('Описание', max_length=255)
     status = models.BooleanField()
