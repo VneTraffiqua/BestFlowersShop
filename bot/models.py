@@ -77,6 +77,7 @@ class Customer(models.Model):
         db_index=True
     )
 
+
     def __str__(self):
         return f'{self.name}'
 
