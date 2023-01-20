@@ -5,11 +5,11 @@ import django
 import phonenumbers
 django.setup()
 
-import re
 from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, LabeledPrice, Bot
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           CallbackContext, ConversationHandler, PreCheckoutQueryHandler)
+
 from service_functions import *
 from bot.models import Customer, Bouquet, Order
 
@@ -301,9 +301,7 @@ def validate_phonenumber(update: Update, context: CallbackContext):
         return enter_number_again(update, context)
 
     if context.user_data.get('name'): # если ввод номера произошел при заказе
-
         save_user_choice(update, context)
-
         return save_models(update, context)
 
     return send_information_to_florist(update, context)
@@ -345,7 +343,7 @@ def save_models(update: Update, context: CallbackContext):
     customer.ordedrs = order
     customer.save()
 
-    return send_information_to_courier(update, context)
+    return start_without_shipping_callback(update, context)
 
 
 def order_consultation(update: Update, context: CallbackContext):
@@ -362,7 +360,6 @@ def send_information_to_florist(update: Update, context: CallbackContext):
     context.user_data['choice'] = 'phone_number_to_florist'
     save_user_choice(update, context)
 
-
     update.message.reply_text(
         'Флорист скоро свяжется с вами. А пока можете присмотреть что-нибудь из готовой коллекции'
     )
@@ -374,22 +371,10 @@ def send_information_to_florist(update: Update, context: CallbackContext):
 
 def send_information_to_courier(update: Update, context: CallbackContext):
 
-    message_keyboard = [['Стоп', 'Заново']]
 
-    markup = ReplyKeyboardMarkup(
-        message_keyboard,
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-
-    update.message.reply_text(
-        text='''Ваш заказ принят, ожидайте доставки
-
-Хотите начать заново?''',
-        reply_markup=markup
-    )
 
     return START_OR_STOP
+
 
 def view_full_collection(update: Update, context: CallbackContext):
 
@@ -460,7 +445,39 @@ def view_full_collection(update: Update, context: CallbackContext):
 
         return START_OR_STOP
 
-def main():
+
+def start_without_shipping_callback(update: Update, context: CallbackContext) -> None:
+    chat_id = update.message.chat_id
+    title = 'Заказ'
+    description = 'Описание платежа'
+    payload = 'Custom-Payload'
+    provider_token = os.getenv('PAYMENT_TOKEN')
+    currency = 'RUB'
+    price = context.user_data['selected_bouquet'].price
+    prices = [LabeledPrice('Test', price * 100)]
+
+    context.bot.send_invoice(
+        chat_id,
+        title,
+        description,
+        payload,
+        provider_token,
+        currency,
+        prices,
+    )
+
+    return dispatcher.add_handler(PreCheckoutQueryHandler(precheckout_callback))
+
+
+def precheckout_callback(update: Update, context: CallbackContext) -> None:
+    query = update.pre_checkout_query
+    if query.invoice_payload != 'Custom-Payload':
+        query.answer(ok=False, error_message="Something went wrong...")
+    else:
+        query.answer(ok=True)
+
+
+if __name__ == '__main__':
     load_dotenv()
     updater = Updater(TELEGRAM_TOKEN)
     dispatcher = updater.dispatcher
@@ -533,5 +550,4 @@ def main():
     updater.start_polling()
     updater.idle()
 
-if __name__ == '__main__':
-    main()
+
