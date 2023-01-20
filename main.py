@@ -5,6 +5,7 @@ import django
 import phonenumbers
 django.setup()
 
+import re
 from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, LabeledPrice, Bot
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
@@ -13,8 +14,9 @@ from service_functions import *
 from bot.models import Customer, Bouquet, Order
 
 
-BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_TIME, \
-    PHONE, PHONE_VALIDATOR, FLORIST, VIEWING_COLLECTION, START_OR_STOP = range(11)
+BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_DATE, \
+    DELIVERY_TIME, PHONE, PHONE_VALIDATOR, FLORIST, VIEWING_COLLECTION, \
+    START_OR_STOP, SAVE_DATE, SAVE_TIME, SAVE_ADDRESS = range(15)
 
 load_dotenv()
 
@@ -179,29 +181,101 @@ def get_address(update: Update, context: CallbackContext):
 
     context.user_data['choice'] = 'address'
 
-    update.message.reply_text(
-        'Введите адрес доставки'
-    )
+    message_keyboard = [[
+        KeyboardButton('Отправить геопозицию', request_location=True)
+    ]]
 
-    return DELIVERY_TIME
+    markup = ReplyKeyboardMarkup(message_keyboard,
+                                 one_time_keyboard=True,
+                                 resize_keyboard=True)
+
+    update.message.reply_text('Введите ваш адрес', reply_markup=markup)
+
+    return SAVE_ADDRESS
+
+
+def save_address(update: Update, context: CallbackContext) -> int:
+
+    if update.message.location:
+        address = f"{update.message.location['latitude']}, {update.message.location['longitude']}"
+
+    else:
+        address = update.message.text
+
+    category = context.user_data['choice']
+    context.user_data[category] = address
+
+    return get_delivery_date(update, context)
+
+
+def get_delivery_date(update: Update, context: CallbackContext) -> int:
+    context.user_data['choice'] = 'delivery_date'
+    update.message.reply_text('Введите дату доставки в формате: ДД.ММ.ГГГГ')
+    return SAVE_DATE
+
+
+def save_date(update, context):
+    date = update.message.text
+    if not is_valid_date(date):
+        update.message.reply_text('Некорректная дата')
+        return get_delivery_date(update, context)
+
+    day = date[0:2]
+    month = date[3:5]
+    year = date[6:]
+
+    date = f'{year}-{month}-{day}'
+    category = context.user_data['choice']
+    context.user_data[category] = date
+
+    return get_delivery_time(update, context)
 
 
 def get_delivery_time(update: Update, context: CallbackContext):
 
-    save_user_choice(update, context)
-
     context.user_data['choice'] = 'delivery_time'
+    update.message.reply_text('Введите время доставки в формате: ЧЧ.ММ')
 
-    update.message.reply_text(
-        'Укажите дату и время доставки'
+    return SAVE_TIME
+
+
+def save_time(update, context):
+
+    time = update.message.text
+
+    if not is_time_valid(time):
+        return get_delivery_time(update, context)
+
+    hours, minutes = map(
+        lambda x: f'{int(x):02}',
+        time.split(re.search(r'[-.:]{1}', time).group())
     )
+    category = context.user_data['choice']
+    context.user_data[category] = f'{hours}:{minutes}'
+    del context.user_data['choice']
 
-    return PHONE
+    return get_phonenumber(update, context)
+
+# def get_delivery_time(update: Update, context: CallbackContext):
+#
+#     save_user_choice(update, context)
+#
+#     context.user_data['choice'] = 'delivery_time'
+#
+#     update.message.reply_text(
+#         'Укажите дату и время доставки'
+#     )
+#
+#     return PHONE
 
 
 def get_phonenumber(update: Update, context: CallbackContext):
 
-    save_user_choice(update, context)
+    time = update.message.text
+
+    if not is_time_valid(time):
+        update.message.reply_text('Некорректное время')
+        return get_delivery_time(update, context)
 
     context.user_data['choice'] = 'phonenumber'
 
@@ -253,8 +327,8 @@ def save_models(update: Update, context: CallbackContext):
     phonenumber = context.user_data['phonenumber']
 
     address = context.user_data['address']
-    delivery_date = context.user_data['delivery_time'].split()[0]
-    delivery_time = context.user_data['delivery_time'].split()[1]
+    delivery_date = context.user_data['delivery_date']
+    delivery_time = context.user_data['delivery_time']
     bouquet = context.user_data['selected_bouquet']
 
     order = Order.objects.create(
@@ -421,7 +495,19 @@ def main():
 
             ADDRESS: [MessageHandler(Filters.text, get_address)],
 
+            SAVE_ADDRESS: [
+                MessageHandler(Filters.text, save_address),
+                MessageHandler(Filters.location, save_address),
+            ],
+
+            DELIVERY_DATE: [MessageHandler(Filters.text, get_delivery_date)],
+
+            SAVE_DATE: [MessageHandler(Filters.text, save_date)],
+
+            SAVE_TIME: [MessageHandler(Filters.text, save_time)],
+
             DELIVERY_TIME: [MessageHandler(Filters.text, get_delivery_time)],
+
 
             PHONE: [MessageHandler(Filters.text, get_phonenumber)],
 
