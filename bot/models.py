@@ -91,7 +91,7 @@ class Order(models.Model):
     delivery_date = models.DateField('Дата доставки', )
     delivery_time = models.TimeField('Время доставки', )
     bouquet = models.ForeignKey(
-        to=Bouquet, on_delete=models.CASCADE, verbose_name='Букет>',
+        to=Bouquet, on_delete=models.CASCADE, verbose_name='Букет',
     )
     customer = models.ForeignKey(
         to=Customer,
