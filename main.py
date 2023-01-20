@@ -54,8 +54,8 @@ def choose_price(update: Update, context: CallbackContext):
     save_user_choice(update, context)
 
     message_keyboard = [
-        ['500', '1000'],
-        ['2000', 'Больше'],
+        ['~500', '~1000'],
+        ['~2000', 'Больше'],
         ['Не важно']
     ]
 
@@ -96,15 +96,15 @@ def send_bouquet_information(update: Update, context: CallbackContext):
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
                                                   price__gt=2000)
 
-    elif context.user_data['price'] == '500':
+    elif context.user_data['price'] == '~500':
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
                                                   price__lt=500)
 
-    elif context.user_data['price'] == '1000':
+    elif context.user_data['price'] == '~1000':
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
                                                   price__range=(500, 1000))
 
-    elif context.user_data['price'] == '2000':
+    elif context.user_data['price'] == '~2000':
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
                                                   price__range=(1000, 2000))
 
@@ -389,7 +389,12 @@ def main():
                 # ),
             ],
 
-            PRICE: [MessageHandler(Filters.text, send_bouquet_information)],
+            PRICE: [
+                MessageHandler(
+                    Filters.regex('^(~500|~1000|~2000|Больше|Не важно)$'),
+                    send_bouquet_information
+                )
+            ],
 
             FORK: [
                 MessageHandler(Filters.regex('^Заказать букет'), get_customer_name),
