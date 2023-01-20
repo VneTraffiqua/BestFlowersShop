@@ -13,8 +13,8 @@ from service_functions import *
 from bot.models import Customer, Bouquet, Order
 
 
-BOUQUET_OCCASION, PRICE, FORK, ADDRESS, DELIVERY_TIME, \
-    PHONE, PHONE_VALIDATOR, FLORIST, VIEWING_COLLECTION, START_OR_STOP = range(10)
+BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_TIME, \
+    PHONE, PHONE_VALIDATOR, FLORIST, VIEWING_COLLECTION, START_OR_STOP = range(11)
 
 load_dotenv()
 
@@ -31,7 +31,7 @@ def send_start_msg():
 def start(update: Update, context: CallbackContext):
 
     message_keyboard = [['День рождения', 'Свадьба'],
-                        ['Без повода']]
+                        ['Без повода', 'Другой повод']]
 
     markup = ReplyKeyboardMarkup(
         message_keyboard,
@@ -46,7 +46,16 @@ def start(update: Update, context: CallbackContext):
         reply_markup=markup,
     )
 
-    return BOUQUET_OCCASION
+    return BOUQUET_EVENT
+
+
+def choose_other_event(update: Update, context: CallbackContext):
+
+    update.message.reply_text(
+        'К какому событию хотите подобрать букет?'
+    )
+
+    return OTHER_EVENT
 
 
 def choose_price(update: Update, context: CallbackContext):
@@ -91,6 +100,10 @@ def send_bouquet_information(update: Update, context: CallbackContext):
     )
 
     event = context.user_data['event']
+
+    if event not in ('Свадьба', 'День рождения', 'Без повода'):
+        context.user_data['event'] = event = 'Без повода'
+
 
     if context.user_data['price'] == 'Больше':
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
@@ -358,6 +371,7 @@ def view_full_collection(update: Update, context: CallbackContext):
 
         message_keyboard = [
             ['Стоп', 'Заново'],
+            ['Заказать консультацию']
         ]
 
         markup = ReplyKeyboardMarkup(
@@ -382,15 +396,15 @@ def main():
         allow_reentry=True,
         states={
 
-            BOUQUET_OCCASION: [
+            BOUQUET_EVENT: [
                 MessageHandler(
                     Filters.regex('^(День рождения|Свадьба|Без повода)$'),
                     choose_price
                 ),
-                # MessageHandler(
-                #     Filters.regex('^Другой повод$'), choose_other_occasion
-                # ),
+                MessageHandler(Filters.regex('^Другой повод'), choose_other_event),
             ],
+
+            OTHER_EVENT: [MessageHandler(Filters.text, choose_price)],
 
             PRICE: [
                 MessageHandler(
@@ -422,6 +436,7 @@ def main():
 
             START_OR_STOP: [
                 MessageHandler(Filters.regex('^Заново'), start),
+                MessageHandler(Filters.regex('^Заказать консультацию'), order_consultation)
             ]
 
         },
