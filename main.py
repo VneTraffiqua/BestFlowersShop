@@ -225,7 +225,10 @@ def validate_phonenumber(update: Update, context: CallbackContext):
 def enter_number_again(update: Update, context: CallbackContext):
 
     update.message.reply_text(
-        'Введите валидный номер телефона'
+        '''
+Введите корректный номер телефона в международном формате.
+Например +79181234567
+'''
     )
 
     return PHONE_VALIDATOR
