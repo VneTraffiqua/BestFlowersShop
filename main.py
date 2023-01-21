@@ -25,7 +25,8 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 def send_start_msg():
 
-    message = "К какому событию готовимся? Выберите один из вариантов, либо укажите свой."
+    message = "К какому событию готовимся? Выберите " \
+              "один из вариантов, либо укажите свой."
 
     return message
 
@@ -44,14 +45,16 @@ def start(update: Update, context: CallbackContext):
     context.user_data['choice'] = 'event'
 
     update.message.reply_text(
-        'К какому событию готовимся? Выберите один из вариантов, либо укажите свой.',
+        'К какому событию готовимся? Выберите один из '
+        'вариантов, либо укажите свой.',
         reply_markup=markup,
     )
 
     return BOUQUET_EVENT
 
 
-def choose_other_event(update: Update, context: CallbackContext):
+def choose_other_event(update: Update,
+                       context: CallbackContext):
 
     update.message.reply_text(
         'К какому событию хотите подобрать букет?'
@@ -60,7 +63,8 @@ def choose_other_event(update: Update, context: CallbackContext):
     return OTHER_EVENT
 
 
-def choose_price(update: Update, context: CallbackContext):
+def choose_price(update: Update,
+                 context: CallbackContext):
 
     save_user_choice(update, context)
 
@@ -86,13 +90,17 @@ def choose_price(update: Update, context: CallbackContext):
     return PRICE
 
 
-def send_bouquet_information(update: Update, context: CallbackContext):
+def send_bouquet_information(update: Update,
+                             context: CallbackContext):
 
     save_user_choice(update, context)
 
     message_keyboard = [
         ['Заказать букет'],
-        ['Заказать консультацию', 'Посмотреть всю коллекцию']
+        [
+            'Заказать консультацию',
+            'Посмотреть всю коллекцию'
+         ]
     ]
 
     markup = ReplyKeyboardMarkup(
@@ -108,20 +116,20 @@ def send_bouquet_information(update: Update, context: CallbackContext):
 
 
     if context.user_data['price'] == 'Больше':
-        filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                  price__gt=2000)
+        filtered_bouquets_collection = \
+            Bouquet.objects.filter(category__title=event, price__gt=2000)
 
     elif context.user_data['price'] == '~500':
-        filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                  price__lt=500)
+        filtered_bouquets_collection = \
+            Bouquet.objects.filter(category__title=event, price__lt=500)
 
     elif context.user_data['price'] == '~1000':
-        filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                  price__range=(500, 1000))
+        filtered_bouquets_collection = \
+            Bouquet.objects.filter(category__title=event, price__range=(500, 1000))
 
     elif context.user_data['price'] == '~2000':
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                  price__range=(1000, 2000))
+                                                              price__range=(1000, 2000))
 
     else:
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event)
@@ -136,7 +144,7 @@ def send_bouquet_information(update: Update, context: CallbackContext):
 
     photo = bouquet.image
 
-    floral_composition = bouquet.floral_composition
+    floral_composition = ', '.join([str(flower) for flower in bouquet.flowers.all()])
 
     price = bouquet.price
 
@@ -256,18 +264,6 @@ def save_time(update, context):
 
     return get_phonenumber(update, context)
 
-# def get_delivery_time(update: Update, context: CallbackContext):
-#
-#     save_user_choice(update, context)
-#
-#     context.user_data['choice'] = 'delivery_time'
-#
-#     update.message.reply_text(
-#         'Укажите дату и время доставки'
-#     )
-#
-#     return PHONE
-
 
 def get_phonenumber(update: Update, context: CallbackContext):
 
@@ -329,19 +325,15 @@ def save_models(update: Update, context: CallbackContext):
     delivery_time = context.user_data['delivery_time']
     bouquet = context.user_data['selected_bouquet']
 
-    order = Order.objects.create(
+    customer = Customer.objects.get_or_create(name=name, phone_number=phonenumber)[0]
+
+    Order.objects.create(
         address=address,
         delivery_date=delivery_date,
         delivery_time=delivery_time,
+        bouquet=bouquet,
+        customer=customer
     )
-
-    order.bouquet.set([bouquet])
-    order.save()
-
-    customer = Customer.objects.get_or_create(name=name, phone_number=phonenumber)[0]
-
-    customer.ordedrs = order
-    customer.save()
 
     return start_without_shipping_callback(update, context)
 
@@ -370,9 +362,6 @@ def send_information_to_florist(update: Update, context: CallbackContext):
 
 
 def send_information_to_courier(update: Update, context: CallbackContext):
-
-
-
     return START_OR_STOP
 
 
@@ -391,7 +380,7 @@ def view_full_collection(update: Update, context: CallbackContext):
     context.user_data['selected_bouquet'] = bouquet
 
     photo = bouquet.image
-    floral_composition = bouquet.floral_composition
+    floral_composition = ', '.join([str(flower) for flower in bouquet.flowers.all()])
     price = bouquet.price
     text = f'''
     {bouquet.title}
