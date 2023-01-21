@@ -9,12 +9,14 @@ from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, LabeledPrice, Bot
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           CallbackContext, ConversationHandler, PreCheckoutQueryHandler)
+
 from service_functions import *
 from bot.models import Customer, Bouquet, Order
 
 
-BOUQUET_OCCASION, PRICE, FORK, ADDRESS, DELIVERY_TIME, \
-    PHONE, PHONE_VALIDATOR, FLORIST, VIEWING_COLLECTION, START_OR_STOP = range(10)
+BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_DATE, \
+    DELIVERY_TIME, PHONE, PHONE_VALIDATOR, FLORIST, VIEWING_COLLECTION, \
+    START_OR_STOP, SAVE_DATE, SAVE_TIME, SAVE_ADDRESS = range(15)
 
 load_dotenv()
 
@@ -23,7 +25,8 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 def send_start_msg():
 
-    message = "К какому событию готовимся? Выберите один из вариантов, либо укажите свой."
+    message = "К какому событию готовимся? Выберите " \
+              "один из вариантов, либо укажите свой."
 
     return message
 
@@ -31,7 +34,7 @@ def send_start_msg():
 def start(update: Update, context: CallbackContext):
 
     message_keyboard = [['День рождения', 'Свадьба'],
-                        ['Без повода']]
+                        ['Без повода', 'Другой повод']]
 
     markup = ReplyKeyboardMarkup(
         message_keyboard,
@@ -42,20 +45,32 @@ def start(update: Update, context: CallbackContext):
     context.user_data['choice'] = 'event'
 
     update.message.reply_text(
-        'К какому событию готовимся? Выберите один из вариантов, либо укажите свой.',
+        'К какому событию готовимся? Выберите один из '
+        'вариантов, либо укажите свой.',
         reply_markup=markup,
     )
 
-    return BOUQUET_OCCASION
+    return BOUQUET_EVENT
 
 
-def choose_price(update: Update, context: CallbackContext):
+def choose_other_event(update: Update,
+                       context: CallbackContext):
+
+    update.message.reply_text(
+        'К какому событию хотите подобрать букет?'
+    )
+
+    return OTHER_EVENT
+
+
+def choose_price(update: Update,
+                 context: CallbackContext):
 
     save_user_choice(update, context)
 
     message_keyboard = [
-        ['500', '1000'],
-        ['2000', 'Больше'],
+        ['~500', '~1000'],
+        ['~2000', 'Больше'],
         ['Не важно']
     ]
 
@@ -75,13 +90,17 @@ def choose_price(update: Update, context: CallbackContext):
     return PRICE
 
 
-def send_bouquet_information(update: Update, context: CallbackContext):
+def send_bouquet_information(update: Update,
+                             context: CallbackContext):
 
     save_user_choice(update, context)
 
     message_keyboard = [
         ['Заказать букет'],
-        ['Заказать консультацию', 'Посмотреть всю коллекцию']
+        [
+            'Заказать консультацию',
+            'Посмотреть всю коллекцию'
+         ]
     ]
 
     markup = ReplyKeyboardMarkup(
@@ -92,21 +111,25 @@ def send_bouquet_information(update: Update, context: CallbackContext):
 
     event = context.user_data['event']
 
+    if event not in ('Свадьба', 'День рождения', 'Без повода'):
+        context.user_data['event'] = event = 'Без повода'
+
+
     if context.user_data['price'] == 'Больше':
-        filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                  price__gt=2000)
+        filtered_bouquets_collection = \
+            Bouquet.objects.filter(category__title=event, price__gt=2000)
 
-    elif context.user_data['price'] == '500':
-        filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                  price__lt=500)
+    elif context.user_data['price'] == '~500':
+        filtered_bouquets_collection = \
+            Bouquet.objects.filter(category__title=event, price__lt=500)
 
-    elif context.user_data['price'] == '1000':
-        filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                  price__range=(500, 1000))
+    elif context.user_data['price'] == '~1000':
+        filtered_bouquets_collection = \
+            Bouquet.objects.filter(category__title=event, price__range=(500, 1000))
 
-    elif context.user_data['price'] == '2000':
+    elif context.user_data['price'] == '~2000':
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                  price__range=(1000, 2000))
+                                                              price__range=(1000, 2000))
 
     else:
         filtered_bouquets_collection = Bouquet.objects.filter(category__title=event)
@@ -121,7 +144,7 @@ def send_bouquet_information(update: Update, context: CallbackContext):
 
     photo = bouquet.image
 
-    floral_composition = bouquet.floral_composition
+    floral_composition = ', '.join([str(flower) for flower in bouquet.flowers.all()])
 
     price = bouquet.price
 
@@ -166,29 +189,89 @@ def get_address(update: Update, context: CallbackContext):
 
     context.user_data['choice'] = 'address'
 
-    update.message.reply_text(
-        'Введите адрес доставки'
-    )
+    message_keyboard = [[
+        KeyboardButton('Отправить геопозицию', request_location=True)
+    ]]
 
-    return DELIVERY_TIME
+    markup = ReplyKeyboardMarkup(message_keyboard,
+                                 one_time_keyboard=True,
+                                 resize_keyboard=True)
+
+    update.message.reply_text('Введите ваш адрес', reply_markup=markup)
+
+    return SAVE_ADDRESS
+
+
+def save_address(update: Update, context: CallbackContext) -> int:
+
+    if update.message.location:
+        address = f"{update.message.location['latitude']}, {update.message.location['longitude']}"
+
+    else:
+        address = update.message.text
+
+    category = context.user_data['choice']
+    context.user_data[category] = address
+
+    return get_delivery_date(update, context)
+
+
+def get_delivery_date(update: Update, context: CallbackContext) -> int:
+    context.user_data['choice'] = 'delivery_date'
+    update.message.reply_text('Введите дату доставки в формате: ДД.ММ.ГГГГ')
+    return SAVE_DATE
+
+
+def save_date(update, context):
+    date = update.message.text
+    if not is_valid_date(date):
+        update.message.reply_text('Некорректная дата')
+        return get_delivery_date(update, context)
+
+    day = date[0:2]
+    month = date[3:5]
+    year = date[6:]
+
+    date = f'{year}-{month}-{day}'
+    category = context.user_data['choice']
+    context.user_data[category] = date
+
+    return get_delivery_time(update, context)
 
 
 def get_delivery_time(update: Update, context: CallbackContext):
 
-    save_user_choice(update, context)
-
     context.user_data['choice'] = 'delivery_time'
+    update.message.reply_text('Введите время доставки в формате: ЧЧ.ММ')
 
-    update.message.reply_text(
-        'Укажите дату и время доставки'
+    return SAVE_TIME
+
+
+def save_time(update, context):
+
+    time = update.message.text
+
+    if not is_time_valid(time):
+        return get_delivery_time(update, context)
+
+    hours, minutes = map(
+        lambda x: f'{int(x):02}',
+        time.split(re.search(r'[-.:]{1}', time).group())
     )
+    category = context.user_data['choice']
+    context.user_data[category] = f'{hours}:{minutes}'
+    del context.user_data['choice']
 
-    return PHONE
+    return get_phonenumber(update, context)
 
 
 def get_phonenumber(update: Update, context: CallbackContext):
 
-    save_user_choice(update, context)
+    time = update.message.text
+
+    if not is_time_valid(time):
+        update.message.reply_text('Некорректное время')
+        return get_delivery_time(update, context)
 
     context.user_data['choice'] = 'phonenumber'
 
@@ -214,9 +297,7 @@ def validate_phonenumber(update: Update, context: CallbackContext):
         return enter_number_again(update, context)
 
     if context.user_data.get('name'): # если ввод номера произошел при заказе
-
         save_user_choice(update, context)
-
         return save_models(update, context)
 
     return send_information_to_florist(update, context)
@@ -225,7 +306,10 @@ def validate_phonenumber(update: Update, context: CallbackContext):
 def enter_number_again(update: Update, context: CallbackContext):
 
     update.message.reply_text(
-        'Введите валидный номер телефона'
+        '''
+Введите корректный номер телефона в международном формате.
+Например +79181234567
+'''
     )
 
     return PHONE_VALIDATOR
@@ -237,25 +321,21 @@ def save_models(update: Update, context: CallbackContext):
     phonenumber = context.user_data['phonenumber']
 
     address = context.user_data['address']
-    delivery_date = context.user_data['delivery_time'].split()[0]
-    delivery_time = context.user_data['delivery_time'].split()[1]
+    delivery_date = context.user_data['delivery_date']
+    delivery_time = context.user_data['delivery_time']
     bouquet = context.user_data['selected_bouquet']
-
-    order = Order.objects.create(
-        address=address,
-        delivery_date=delivery_date,
-        delivery_time=delivery_time,
-    )
-
-    order.bouquet.set([bouquet])
-    order.save()
 
     customer = Customer.objects.get_or_create(name=name, phone_number=phonenumber)[0]
 
-    customer.ordedrs = order
-    customer.save()
+    Order.objects.create(
+        address=address,
+        delivery_date=delivery_date,
+        delivery_time=delivery_time,
+        bouquet=bouquet,
+        customer=customer
+    )
 
-    return send_information_to_courier(update, context)
+    return start_without_shipping_callback(update, context)
 
 
 def order_consultation(update: Update, context: CallbackContext):
@@ -272,7 +352,6 @@ def send_information_to_florist(update: Update, context: CallbackContext):
     context.user_data['choice'] = 'phone_number_to_florist'
     save_user_choice(update, context)
 
-
     update.message.reply_text(
         'Флорист скоро свяжется с вами. А пока можете присмотреть что-нибудь из готовой коллекции'
     )
@@ -283,23 +362,8 @@ def send_information_to_florist(update: Update, context: CallbackContext):
 
 
 def send_information_to_courier(update: Update, context: CallbackContext):
-
-    message_keyboard = [['Стоп', 'Заново']]
-
-    markup = ReplyKeyboardMarkup(
-        message_keyboard,
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-
-    update.message.reply_text(
-        text='''Ваш заказ принят, ожидайте доставки
-
-Хотите начать заново?''',
-        reply_markup=markup
-    )
-
     return START_OR_STOP
+
 
 def view_full_collection(update: Update, context: CallbackContext):
 
@@ -316,7 +380,7 @@ def view_full_collection(update: Update, context: CallbackContext):
     context.user_data['selected_bouquet'] = bouquet
 
     photo = bouquet.image
-    floral_composition = bouquet.floral_composition
+    floral_composition = ', '.join([str(flower) for flower in bouquet.flowers.all()])
     price = bouquet.price
     text = f'''
     {bouquet.title}
@@ -355,6 +419,7 @@ def view_full_collection(update: Update, context: CallbackContext):
 
         message_keyboard = [
             ['Стоп', 'Заново'],
+            ['Заказать консультацию']
         ]
 
         markup = ReplyKeyboardMarkup(
@@ -369,7 +434,39 @@ def view_full_collection(update: Update, context: CallbackContext):
 
         return START_OR_STOP
 
-def main():
+
+def start_without_shipping_callback(update: Update, context: CallbackContext) -> None:
+    chat_id = update.message.chat_id
+    title = 'Заказ'
+    description = 'Описание платежа'
+    payload = 'Custom-Payload'
+    provider_token = os.getenv('PAYMENT_TOKEN')
+    currency = 'RUB'
+    price = context.user_data['selected_bouquet'].price
+    prices = [LabeledPrice('Test', price * 100)]
+
+    context.bot.send_invoice(
+        chat_id,
+        title,
+        description,
+        payload,
+        provider_token,
+        currency,
+        prices,
+    )
+
+    return dispatcher.add_handler(PreCheckoutQueryHandler(precheckout_callback))
+
+
+def precheckout_callback(update: Update, context: CallbackContext) -> None:
+    query = update.pre_checkout_query
+    if query.invoice_payload != 'Custom-Payload':
+        query.answer(ok=False, error_message="Something went wrong...")
+    else:
+        query.answer(ok=True)
+
+
+if __name__ == '__main__':
     load_dotenv()
     updater = Updater(TELEGRAM_TOKEN)
     dispatcher = updater.dispatcher
@@ -379,17 +476,22 @@ def main():
         allow_reentry=True,
         states={
 
-            BOUQUET_OCCASION: [
+            BOUQUET_EVENT: [
                 MessageHandler(
                     Filters.regex('^(День рождения|Свадьба|Без повода)$'),
                     choose_price
                 ),
-                # MessageHandler(
-                #     Filters.regex('^Другой повод$'), choose_other_occasion
-                # ),
+                MessageHandler(Filters.regex('^Другой повод'), choose_other_event),
             ],
 
-            PRICE: [MessageHandler(Filters.text, send_bouquet_information)],
+            OTHER_EVENT: [MessageHandler(Filters.text, choose_price)],
+
+            PRICE: [
+                MessageHandler(
+                    Filters.regex('^(~500|~1000|~2000|Больше|Не важно)$'),
+                    send_bouquet_information
+                )
+            ],
 
             FORK: [
                 MessageHandler(Filters.regex('^Заказать букет'), get_customer_name),
@@ -399,7 +501,19 @@ def main():
 
             ADDRESS: [MessageHandler(Filters.text, get_address)],
 
+            SAVE_ADDRESS: [
+                MessageHandler(Filters.text, save_address),
+                MessageHandler(Filters.location, save_address),
+            ],
+
+            DELIVERY_DATE: [MessageHandler(Filters.text, get_delivery_date)],
+
+            SAVE_DATE: [MessageHandler(Filters.text, save_date)],
+
+            SAVE_TIME: [MessageHandler(Filters.text, save_time)],
+
             DELIVERY_TIME: [MessageHandler(Filters.text, get_delivery_time)],
+
 
             PHONE: [MessageHandler(Filters.text, get_phonenumber)],
 
@@ -414,6 +528,7 @@ def main():
 
             START_OR_STOP: [
                 MessageHandler(Filters.regex('^Заново'), start),
+                MessageHandler(Filters.regex('^Заказать консультацию'), order_consultation)
             ]
 
         },
@@ -424,5 +539,4 @@ def main():
     updater.start_polling()
     updater.idle()
 
-if __name__ == '__main__':
-    main()
+
