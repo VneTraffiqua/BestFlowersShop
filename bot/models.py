@@ -92,13 +92,12 @@ class Order(models.Model):
     delivery_date = models.DateField('Дата доставки', )
     delivery_time = models.TimeField('Время доставки', )
     bouquet = models.ForeignKey(
-        to=Bouquet, on_delete=models.CASCADE, verbose_name='Букет', null=True
+        to=Bouquet, on_delete=models.CASCADE, verbose_name='Букет',
     )
     customer = models.ForeignKey(
         to=Customer,
         on_delete=models.CASCADE,
         verbose_name='Покупатель',
-        default=1
     )
 
     def __str__(self):

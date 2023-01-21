@@ -1,2 +1,9 @@
-# BestFlowersShop
-Telegram bot for selling flowers online
+# Telegram-бот для заказа букетов цветов
+Телеграм бот для продажи цветов онлайн с административной панелью на Django
+## Запуск
+- Скачайте код
+- Установите зависимости командой `pip install -r requirements.txt`
+- Создайте файл базы данных и сразу примените все миграции командой `python3 manage.py migrate`
+- Запустите сервер командой `python3 manage.py runserver`
+## Цели проекта
+Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org).
