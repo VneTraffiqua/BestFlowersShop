@@ -18,10 +18,6 @@ BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_DATE, \
     DELIVERY_TIME, PHONE, PHONE_VALIDATOR, FLORIST, VIEWING_COLLECTION, \
     START_OR_STOP, SAVE_DATE, SAVE_TIME, SAVE_ADDRESS = range(15)
 
-load_dotenv()
-
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-
 
 def send_start_msg():
 
@@ -468,6 +464,7 @@ def precheckout_callback(update: Update, context: CallbackContext) -> None:
 
 if __name__ == '__main__':
     load_dotenv()
+    TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
     updater = Updater(TELEGRAM_TOKEN)
     dispatcher = updater.dispatcher
 
