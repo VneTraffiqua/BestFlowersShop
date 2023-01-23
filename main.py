@@ -259,10 +259,29 @@ def save_date(update, context):
     return get_delivery_time(update, context)
 
 
-def get_delivery_time(update: Update, context: CallbackContext):
+def get_delivery_time(update: Update, context: CallbackContext, date):
+
+    message_keyboard = [
+        ['06.00', '07.00', '08.00', '09.00'],
+        ['10.00', '11.00', '12.00', '13.00', '14.00'],
+        ['15.00', '16.00', '17.00', '18.00', '19.00'],
+        ['20.00', '21.00', '22.00', '23.00', '00.00'],
+        ['01.00', '02.00', '03.00', '04.00', '05.00'],
+        ]
+    
+    datetime_now = datetime.datetime.now()
+    now_day =  datetime_now.strftime('%d')
+    if date[-2]+date[-1] == now_day:
+        message_keyboard = get_timekeyboard(datetime_now)
+
+    markup = ReplyKeyboardMarkup(
+        message_keyboard,
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
 
     context.user_data['choice'] = 'delivery_time'
-    update.message.reply_text('Введите время доставки в формате: ЧЧ.ММ')
+    update.message.reply_text('Введите время доставки в формате: ЧЧ.ММ', reply_markup=markup)
 
     return SAVE_TIME
 
