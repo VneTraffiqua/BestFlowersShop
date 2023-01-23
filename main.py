@@ -67,8 +67,8 @@ def choose_price(update: Update,
     save_user_choice(update, context)
 
     message_keyboard = [
-        ['~500', '~1000'],
-        ['~2000', 'Больше'],
+        ['~500₽', '~1000₽'],
+        ['~2000₽', 'Больше'],
         ['Не важно']
     ]
 
@@ -117,13 +117,13 @@ def send_bouquet_information(update: Update,
         if context.user_data['price'] == 'Больше':
             filtered_bouquets_collection = \
                 bouquet_set.filter(category__title=event, price__gt=2000)
-        elif context.user_data['price'] == '~500':
+        elif context.user_data['price'] == '~500₽':
             filtered_bouquets_collection = \
                 bouquet_set.filter(category__title=event, price__lt=500)
-        elif context.user_data['price'] == '~1000':
+        elif context.user_data['price'] == '~1000₽':
             filtered_bouquets_collection = \
                 bouquet_set.filter(category__title=event, price__range=(500, 1000))
-        elif context.user_data['price'] == '~2000':
+        elif context.user_data['price'] == '~2000₽':
             filtered_bouquets_collection = \
                 bouquet_set.filter(category__title=event,price__range=(1000, 2000))
         else:
@@ -131,11 +131,11 @@ def send_bouquet_information(update: Update,
     else:
         if context.user_data['price'] == 'Больше':
             filtered_bouquets_collection = bouquet_set.filter(price__gt=2000)
-        elif context.user_data['price'] == '~500':
+        elif context.user_data['price'] == '~500₽':
             filtered_bouquets_collection = bouquet_set.filter(price__lt=500)
-        elif context.user_data['price'] == '~1000':
+        elif context.user_data['price'] == '~1000₽':
             filtered_bouquets_collection = bouquet_set.filter(price__range=(500, 1000))
-        elif context.user_data['price'] == '~2000':
+        elif context.user_data['price'] == '~2000₽':
             filtered_bouquets_collection = bouquet_set.filter(price__range=(1000, 2000))
         else:
             filtered_bouquets_collection = bouquet_set
@@ -530,7 +530,7 @@ if __name__ == '__main__':
 
             PRICE: [
                 MessageHandler(
-                    Filters.regex('^(~500|~1000|~2000|Больше|Не важно)$'),
+                    Filters.regex('^(~500₽|~1000₽|~2000₽|Больше|Не важно)$'),
                     send_bouquet_information
                 )
             ],
