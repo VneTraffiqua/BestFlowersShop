@@ -108,7 +108,7 @@ def send_bouquet_information(update: Update,
     event = context.user_data['event']
     bouquet_set = Bouquet.objects.all()
 
-    if event not in ('Свадьба', 'День рождения', 'Без повода'):
+    if event not in ('Свадьба', 'День рождения', 'В школу', 'Без повода'):
         context.user_data['event'] = event = 'Без повода'
 
     if event != 'Без повода':    
@@ -162,6 +162,8 @@ def send_bouquet_information(update: Update,
             caption=text,
             reply_markup=markup
         )
+
+
 
     return FORK
 
