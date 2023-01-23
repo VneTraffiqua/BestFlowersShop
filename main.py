@@ -22,26 +22,17 @@ BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_DATE, \
 
 def send_start_msg():
 
-    message_keyboard = \
-        chunked([category.title for category in Category.objects.all()], 2)
-
+    message = "К какому событию готовимся? Выберите один из вариантов, либо укажите свой."
+    
     return message
 
 
 def start(update: Update, context: CallbackContext):
-    counter = 0
-    categories = []
-    temp_categories = []
-    qs_categories = Category.objects.all()
-    for category in qs_categories:
-        temp_categories.append(category.title)
-        counter += 1
-        if counter == 2:
-            categories.append(temp_categories)
-            temp_categories = []
-            counter = 0
-    categories.append(['Без повода', 'Другой повод'])
-    message_keyboard = categories
+
+
+    message_keyboard = \
+        chunked([category.title for category in Category.objects.all()], 2)
+
 
     markup = ReplyKeyboardMarkup(
         message_keyboard,
