@@ -1,7 +1,4 @@
 import os
-
-import telegram
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "flower_shop_bot.settings")
 
 import django
@@ -167,7 +164,6 @@ def send_bouquet_information(update: Update,
             caption=text,
             reply_markup=markup
         )
-        telegram.InlineKeyboardMarkup([['Заказать']], get_customer_name)
 
 
 
