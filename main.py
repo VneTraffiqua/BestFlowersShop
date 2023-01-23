@@ -210,7 +210,7 @@ def save_address(update: Update, context: CallbackContext) -> int:
     return get_delivery_date(update, context)
 
 
-ef generate_date():
+def generate_date():
     datetime_now = datetime.datetime.now()
     dates_for_button = [[datetime_now.strftime('%d.%m.%Y')]]
     for i in range(2):
