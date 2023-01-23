@@ -145,7 +145,7 @@ def send_bouquet_information(update: Update,
     bouquet = filtered_bouquets_collection[context.user_data['bouquet_index']]
     context.user_data['selected_bouquet'] = bouquet
 
-    for bouquet in filtered_bouquets_collection[:5]:
+    for bouquet in filtered_bouquets_collection[:1]:
         photo = bouquet.image
         floral_composition = ', '.join([str(flower) for flower in bouquet.flowers.all()])
         price = bouquet.price
