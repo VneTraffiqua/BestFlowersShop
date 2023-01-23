@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,13 +24,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-5axnh-&etg+7#-2-@w&o_jz_hpqakwub1jp)ah#31t2d77$9&k'
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['flowersshop.herokuapp.com']
+ALLOWED_HOSTS = ['flowersshop.herokuapp.com', 'localhost', '0.0.0.0']
 
+CSRF_TRUSTED_ORIGINS=['https://flowersshop.herokuapp.com']
+ROOT_URLCONF = 'Flower_shop_bot.urls'
 
 # Application definition
 
@@ -77,8 +83,13 @@ WSGI_APPLICATION = 'flower_shop_bot.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'd8k6476n4csvft',
+        'USER': 'xwnqeehqqnakvo',
+        'PASSWORD': os.environ['DB_PASSWORD'],
+        'HOST': 'ec2-63-32-248-14.eu-west-1.compute.amazonaws.com',
+        'PORT': '5432',
+        'DISABLE_SERVER_SIDE_CURSORS': True,
     }
 }
 
