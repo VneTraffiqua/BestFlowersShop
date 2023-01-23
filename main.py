@@ -256,7 +256,7 @@ def save_date(update, context):
     category = context.user_data['choice']
     context.user_data[category] = date
 
-    return get_delivery_time(update, context)
+    return get_delivery_time(update, context, date)
 
 
 def get_delivery_time(update: Update, context: CallbackContext, date):
