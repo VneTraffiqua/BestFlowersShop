@@ -4,3 +4,8 @@ django-phonenumber-field==7.0.0
 python-dotenv==0.21.0
 python-telegram-bot==13.14
 Pillow==9.4.0
+Heroku==0.1.4
+psycopg2-binary==2.9.5
+whitenoise==3.3.0
+django-cors-headers==3.13.0
+more-itertools==9.0.0

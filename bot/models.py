@@ -77,14 +77,12 @@ class Customer(models.Model):
         db_index=True
     )
 
-
     def __str__(self):
         return f'{self.name}'
 
     class Meta:
         verbose_name = 'Покупатель'
         verbose_name_plural = 'Покупатели'
-
 
 
 class Order(models.Model):
