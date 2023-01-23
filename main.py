@@ -22,26 +22,17 @@ BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_DATE, \
 
 def send_start_msg():
 
-    message_keyboard = \
-        chunked([category.title for category in Category.objects.all()], 2)
-
+    message = "К какому событию готовимся? Выберите один из вариантов, либо укажите свой."
+    
     return message
 
 
 def start(update: Update, context: CallbackContext):
-    counter = 0
-    categories = []
-    temp_categories = []
-    qs_categories = Category.objects.all()
-    for category in qs_categories:
-        temp_categories.append(category.title)
-        counter += 1
-        if counter == 2:
-            categories.append(temp_categories)
-            temp_categories = []
-            counter = 0
-    categories.append(['Без повода', 'Другой повод'])
-    message_keyboard = categories
+
+
+    message_keyboard = \
+        chunked([category.title for category in Category.objects.all()], 2)
+
 
     markup = ReplyKeyboardMarkup(
         message_keyboard,
@@ -153,6 +144,7 @@ def send_bouquet_information(update: Update,
     context.user_data['bouquet_index'] = 0
     bouquet = filtered_bouquets_collection[context.user_data['bouquet_index']]
     context.user_data['selected_bouquet'] = bouquet
+
     for bouquet in filtered_bouquets_collection[:5]:
         photo = bouquet.image
         floral_composition = ', '.join([str(flower) for flower in bouquet.flowers.all()])
@@ -172,7 +164,9 @@ def send_bouquet_information(update: Update,
             caption=text,
             reply_markup=markup
         )
-        
+
+
+
     return FORK
 
 
@@ -220,9 +214,29 @@ def save_address(update: Update, context: CallbackContext) -> int:
     return get_delivery_date(update, context)
 
 
+def generate_date():
+    datetime_now = datetime.datetime.now()
+    dates_for_button = [[datetime_now.strftime('%d.%m.%Y')]]
+    for i in range(2):
+        new_list = []
+        for k in range(3):
+            datetime_now += datetime.timedelta(days=1)
+            new_list.append(datetime_now.strftime('%d.%m.%Y'))
+        dates_for_button.append(new_list)
+    return dates_for_button
+
 def get_delivery_date(update: Update, context: CallbackContext) -> int:
     context.user_data['choice'] = 'delivery_date'
-    update.message.reply_text('Введите дату доставки в формате: ДД.ММ.ГГГГ')
+
+    dates = generate_date()
+    message_keyboard = dates
+    markup = ReplyKeyboardMarkup(
+        message_keyboard,
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    update.message.reply_text('Введите дату доставки в формате ДД.ММ.ГГГГ или выберите из предложенных', reply_markup=markup,)
     return SAVE_DATE
 
 
