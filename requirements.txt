@@ -7,3 +7,5 @@ Pillow==9.4.0
 Heroku==0.1.4
 psycopg2-binary==2.9.5
 whitenoise==3.3.0
+django-cors-headers==3.13.0
+
