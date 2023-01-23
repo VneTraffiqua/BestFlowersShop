@@ -26,16 +26,15 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 def send_start_msg():
 
-    message_keyboard = \
-        chunked([category.title for category in Category.objects.all()], 2)
-
+    message = "К какому событию готовимся? Выберите один из вариантов, либо укажите свой.
+    
     return message
 
 
 def start(update: Update, context: CallbackContext):
 
-    message_keyboard = [['День рождения', 'Свадьба'],
-                        ['Без повода', 'Другой повод']]
+    message_keyboard = \
+        chunked([category.title for category in Category.objects.all()], 2)
 
     markup = ReplyKeyboardMarkup(
         message_keyboard,
