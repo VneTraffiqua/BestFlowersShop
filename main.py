@@ -281,6 +281,7 @@ def get_delivery_time(update: Update, context: CallbackContext, date):
     )
 
     context.user_data['choice'] = 'delivery_time'
+    context.user_data['date'] = date
     update.message.reply_text('Введите время доставки в формате: ЧЧ.ММ', reply_markup=markup)
 
     return SAVE_TIME
@@ -288,10 +289,11 @@ def get_delivery_time(update: Update, context: CallbackContext, date):
 
 def save_time(update, context):
 
+    date = context.user_data['date']
     time = update.message.text
 
     if not is_time_valid(time):
-        return get_delivery_time(update, context)
+        return get_delivery_time(update, context, date)
 
     hours, minutes = map(
         lambda x: f'{int(x):02}',
