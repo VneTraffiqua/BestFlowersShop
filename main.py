@@ -256,7 +256,7 @@ def save_date(update, context):
     category = context.user_data['choice']
     context.user_data[category] = date
 
-    return get_delivery_time(update, context)
+    return get_delivery_time(update, context, date)
 
 
 def get_delivery_time(update: Update, context: CallbackContext, date):
@@ -518,7 +518,7 @@ if __name__ == '__main__':
 
             BOUQUET_EVENT: [
                 MessageHandler(
-                    Filters.regex('^(День рождения|Свадьба|Без повода)$'),
+                    Filters.regex('^(День рождения|В школу|Свадьба|Без повода)$'),
                     choose_price
                 ),
                 MessageHandler(Filters.regex('^Другой повод'), choose_other_event),
