@@ -518,7 +518,7 @@ if __name__ == '__main__':
 
             BOUQUET_EVENT: [
                 MessageHandler(
-                    Filters.regex('^(День рождения|Свадьба|Без повода)$'),
+                    Filters.regex('^(День рождения|В школу|Свадьба|Без повода)$'),
                     choose_price
                 ),
                 MessageHandler(Filters.regex('^Другой повод'), choose_other_event),
