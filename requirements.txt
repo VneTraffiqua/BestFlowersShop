@@ -5,3 +5,4 @@ python-dotenv==0.21.0
 python-telegram-bot==13.14
 Pillow==9.4.0
 Heroku==0.1.4
+psycopg2-binary==2.9.5
