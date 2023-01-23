@@ -40,5 +40,27 @@ def is_time_valid(time: str) -> bool:
     return False
 
 
+def get_timekeyboard(datetime_now):
+    now_hours =  datetime_now.strftime('%H')
+    counter = 0
+    temp_time = []
+    time_keyboard = []
+    now_hours =  int(datetime_now.strftime('%H'))
+    for hour in range(now_hours, 25):
+        if hour < 10:
+            hour = f'0{hour}.00'
+        elif hour == 24:
+            hour = '00:00'
+        else:
+            hour = f'{hour}.00'
+        temp_time.append(hour)
+        counter += 1
+        if counter == 6:
+            time_keyboard.append(temp_time)
+            temp_time = []
+            counter = 0
+    if counter != 0:
+        time_keyboard.append(temp_time)
+    return time_keyboard
 
 
