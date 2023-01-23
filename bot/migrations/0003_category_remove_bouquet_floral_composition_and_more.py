@@ -8,7 +8,7 @@ import phonenumber_field.modelfields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bot', '0002_customer_bouquet'),
+        ('bot', '0002_alter_customer_orders'),
     ]
 
     operations = [
