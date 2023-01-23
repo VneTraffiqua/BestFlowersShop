@@ -28,9 +28,19 @@ def send_start_msg():
 
 
 def start(update: Update, context: CallbackContext):
-
-    message_keyboard = [['День рождения', 'Свадьба'],
-                        ['Без повода', 'Другой повод']]
+    counter = 0
+    categories = []
+    temp_categories = []
+    qs_categories = Category.objects.all()
+    for category in qs_categories:
+        temp_categories.append(category.title)
+        counter += 1
+        if counter == 2:
+            categories.append(temp_categories)
+            temp_categories = []
+            counter = 0
+    categories.append(['Без повода', 'Другой повод'])
+    message_keyboard = categories
 
     markup = ReplyKeyboardMarkup(
         message_keyboard,
