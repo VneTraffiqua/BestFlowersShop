@@ -9,9 +9,10 @@ from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, LabeledPrice, Bot
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           CallbackContext, ConversationHandler, PreCheckoutQueryHandler)
+from more_itertools import chunked
 
 from service_functions import *
-from bot.models import Customer, Bouquet, Order
+from bot.models import Customer, Bouquet, Order, Category
 
 
 BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_DATE, \
@@ -21,8 +22,8 @@ BOUQUET_EVENT, OTHER_EVENT, PRICE, FORK, ADDRESS, DELIVERY_DATE, \
 
 def send_start_msg():
 
-    message = "К какому событию готовимся? Выберите " \
-              "один из вариантов, либо укажите свой."
+    message_keyboard = \
+        chunked([category.title for category in Category.objects.all()], 2)
 
     return message
 
