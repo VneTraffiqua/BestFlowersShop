@@ -28,9 +28,19 @@ def send_start_msg():
 
 
 def start(update: Update, context: CallbackContext):
-
-    message_keyboard = [['День рождения', 'Свадьба'],
-                        ['Без повода', 'Другой повод']]
+    counter = 0
+    categories = []
+    temp_categories = []
+    qs_categories = Category.objects.all()
+    for category in qs_categories:
+        temp_categories.append(category.title)
+        counter += 1
+        if counter == 2:
+            categories.append(temp_categories)
+            temp_categories = []
+            counter = 0
+    categories.append(['Без повода', 'Другой повод'])
+    message_keyboard = categories
 
     markup = ReplyKeyboardMarkup(
         message_keyboard,
@@ -106,64 +116,64 @@ def send_bouquet_information(update: Update,
     )
 
     event = context.user_data['event']
+    bouquet_set = Bouquet.objects.all()
 
-    if event not in ('Свадьба', 'День рождения', 'Без повода'):
+    if event not in ('Свадьба', 'День рождения', 'В школу', 'Без повода'):
         context.user_data['event'] = event = 'Без повода'
 
-
-    if context.user_data['price'] == 'Больше':
-        filtered_bouquets_collection = \
-            Bouquet.objects.filter(category__title=event, price__gt=2000)
-
-    elif context.user_data['price'] == '~500':
-        filtered_bouquets_collection = \
-            Bouquet.objects.filter(category__title=event, price__lt=500)
-
-    elif context.user_data['price'] == '~1000':
-        filtered_bouquets_collection = \
-            Bouquet.objects.filter(category__title=event, price__range=(500, 1000))
-
-    elif context.user_data['price'] == '~2000':
-        filtered_bouquets_collection = Bouquet.objects.filter(category__title=event,
-                                                              price__range=(1000, 2000))
-
+    if event != 'Без повода':    
+        if context.user_data['price'] == 'Больше':
+            filtered_bouquets_collection = \
+                bouquet_set.filter(category__title=event, price__gt=2000)
+        elif context.user_data['price'] == '~500':
+            filtered_bouquets_collection = \
+                bouquet_set.filter(category__title=event, price__lt=500)
+        elif context.user_data['price'] == '~1000':
+            filtered_bouquets_collection = \
+                bouquet_set.filter(category__title=event, price__range=(500, 1000))
+        elif context.user_data['price'] == '~2000':
+            filtered_bouquets_collection = \
+                bouquet_set.filter(category__title=event,price__range=(1000, 2000))
+        else:
+            filtered_bouquets_collection = bouquet_set.filter(category__title=event)
     else:
-        filtered_bouquets_collection = Bouquet.objects.filter(category__title=event)
+        if context.user_data['price'] == 'Больше':
+            filtered_bouquets_collection = bouquet_set.filter(price__gt=2000)
+        elif context.user_data['price'] == '~500':
+            filtered_bouquets_collection = bouquet_set.filter(price__lt=500)
+        elif context.user_data['price'] == '~1000':
+            filtered_bouquets_collection = bouquet_set.filter(price__range=(500, 1000))
+        elif context.user_data['price'] == '~2000':
+            filtered_bouquets_collection = bouquet_set.filter(price__range=(1000, 2000))
+        else:
+            filtered_bouquets_collection = bouquet_set
 
     context.user_data['filtered_bouquets_collection'] = filtered_bouquets_collection
-
     context.user_data['bouquet_index'] = 0
-
     bouquet = filtered_bouquets_collection[context.user_data['bouquet_index']]
-
     context.user_data['selected_bouquet'] = bouquet
 
-    photo = bouquet.image
+    for bouquet in filtered_bouquets_collection[:5]:
+        photo = bouquet.image
+        floral_composition = ', '.join([str(flower) for flower in bouquet.flowers.all()])
+        price = bouquet.price
+        text = f'''
+            Название букета: {bouquet.title}
+            \n Смысл букета: {bouquet.bouquet_meaning}
+            \n Цветочная композиция: {floral_composition}
+            \n Стоимость: {price} рублей
+            \n Хотите что-то еще более уникальное? Подберите другой букет из нашей коллекции или закажите консультацию флориста
+            '''
 
-    floral_composition = ', '.join([str(flower) for flower in bouquet.flowers.all()])
+        bot = Bot(token=TELEGRAM_TOKEN)
+        bot.send_photo(
+            chat_id=update.message.chat_id,
+            photo=photo,
+            caption=text,
+            reply_markup=markup
+        )
 
-    price = bouquet.price
 
-    text = f'''
-    {bouquet.title}
-    
-{bouquet.bouquet_meaning}
-    
-Цветочная композиция: {floral_composition}
-
-Стоимость: {price}
-
-Хотите что-то еще более уникальное? Подберите другой букет из нашей коллекции или закажите консультацию флориста
-    '''
-
-    bot = Bot(token=TELEGRAM_TOKEN)
-
-    bot.send_photo(
-        chat_id=update.message.chat_id,
-        photo=photo,
-        caption=text,
-        reply_markup=markup
-    )
 
     return FORK
 
@@ -212,9 +222,29 @@ def save_address(update: Update, context: CallbackContext) -> int:
     return get_delivery_date(update, context)
 
 
+def generate_date():
+    datetime_now = datetime.datetime.now()
+    dates_for_button = [[datetime_now.strftime('%d.%m.%Y')]]
+    for i in range(2):
+        new_list = []
+        for k in range(3):
+            datetime_now += datetime.timedelta(days=1)
+            new_list.append(datetime_now.strftime('%d.%m.%Y'))
+        dates_for_button.append(new_list)
+    return dates_for_button
+
 def get_delivery_date(update: Update, context: CallbackContext) -> int:
     context.user_data['choice'] = 'delivery_date'
-    update.message.reply_text('Введите дату доставки в формате: ДД.ММ.ГГГГ')
+
+    dates = generate_date()
+    message_keyboard = dates
+    markup = ReplyKeyboardMarkup(
+        message_keyboard,
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+
+    update.message.reply_text('Введите дату доставки в формате ДД.ММ.ГГГГ или выберите из предложенных', reply_markup=markup,)
     return SAVE_DATE
 
 
