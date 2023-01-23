@@ -26,7 +26,7 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 def send_start_msg():
 
-    message = "К какому событию готовимся? Выберите один из вариантов, либо укажите свой.
+    message = "К какому событию готовимся? Выберите один из вариантов, либо укажите свой."
     
     return message
 
